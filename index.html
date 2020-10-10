@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Astonia Map Viewer</title>
+  <link href="css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+  body,
+  html {
+    color: #ccc;
+    /*background: #262626;*/
+    background: #aaa;
+    font-family: monospace;
+    height: 100%;
+    width: 100%;
+  }
+
+  #canvas {
+    border: 1px solid black;
+    margin: 0px 5px;
+  }
+
+  .floor {
+    transform: rotateX(55deg) rotateZ(45deg);
+  }
+
+  .tile {
+    display: inline-block;
+    background: #111;
+    width: 48px;
+    height: 48px;
+    box-shadow: 0 0 0 0.1em hsla(0, 0%, 0%, 0.2);
+    border: solid 1px gray;
+    position: relative;
+  }
+
+  .tile.color1 {
+    background: #004085;
+  }
+
+  .tile.color2 {
+    background: #383d41;
+  }
+
+  .tile.color3 {
+    background: #155724;
+  }
+
+  .tile.color4 {
+    background: #721c24;
+  }
+
+  .tile.color5 {
+    background: #856404;
+  }
+
+  .tile.color6 {
+    background: #0c5460;
+  }
+  </style>
+</head>
+
+<body>
+  <select id="mapSelector"></select><br />
+  <canvas id="canvas" width="2000px" height="3000px"></canvas>
+  <script src="js/jquery-3.5.1.min.js"></script>
+  <script src="js/bootstrap.min.js"></script>
+  <script src="js/isomer.min.js"></script>
+  <script>
+  const ITEM_FILES = [
+    "zones/25/warped.itm",
+    "zones/25/teleport.itm",
+    "zones/25/hell_pent.itm",
+    "zones/24/strategy.itm",
+    "zones/23/strategy.itm",
+    "zones/22/lab5.itm",
+    "zones/22/lab4.itm",
+    "zones/22/lab3.itm",
+    "zones/22/lab2.itm",
+    "zones/22/lab1.itm",
+    "zones/21/pent.itm",
+    "zones/21/ice_pents.itm",
+    "zones/21/fire_pents.itm",
+    "zones/20/lq.itm",
+    "zones/19/saltmine.itm",
+    "zones/19/nomad.itm",
+    "zones/18/bones.itm",
+    "zones/17/two.itm",
+    "zones/16/forest.itm",
+    "zones/15/swamp.itm",
+    "zones/14/random.itm",
+    "zones/13/dungeon.itm",
+    "zones/12/mine.itm",
+    "zones/11/palace.itm",
+    "zones/10/ice.itm",
+    "zones/1/sign.itm",
+    "zones/1/shrike.itm",
+    "zones/1/above1_wood.itm",
+    "zones/1/above1_warlock.itm",
+    "zones/1/above1_village.itm",
+    "zones/1/above1_skeleton_maze.itm",
+    "zones/1/above1_robber.itm",
+    "zones/1/above1_mage_castle.itm",
+    "zones/1/above1_mad.itm",
+    "zones/1/above1_knight_castle.itm",
+    "zones/1/above1_guild.itm",
+    "zones/1/above1_city.itm",
+    "zones/2/below2_generic.itm",
+    "zones/generic/weapons.itm",
+    "zones/generic/warr_keys.itm",
+    "zones/generic/transport.itm",
+    "zones/generic/torch.itm",
+    "zones/generic/tmp.itm",
+    "zones/generic/teufelheim.itm",
+    "zones/generic/swamp.itm",
+    "zones/generic/sun_amulet.itm",
+    "zones/generic/stack.itm",
+    "zones/generic/spells.itm",
+    "zones/generic/sidestory.itm",
+    "zones/generic/scroll.itm",
+    "zones/generic/runes.itm",
+    "zones/generic/ring.itm",
+    "zones/generic/recall.itm",
+    "zones/generic/randchest.itm",
+    "zones/generic/potions.itm",
+    "zones/generic/orb.itm",
+    "zones/generic/mr_lights.itm",
+    "zones/generic/mr_doors.itm",
+    "zones/generic/mr_chestbox.itm",
+    "zones/generic/mr_chairs.itm",
+    "zones/generic/moonies.itm",
+    "zones/generic/mission_bonus.itm",
+    "zones/generic/metal.itm",
+    "zones/generic/lab.itm",
+    "zones/generic/ice_palace_key.itm",
+    "zones/generic/grave.itm",
+    "zones/generic/depot.itm",
+    "zones/generic/culture.itm",
+    "zones/generic/cloth.itm",
+    "zones/generic/clan.itm",
+    "zones/generic/caligar.itm",
+    "zones/generic/bonus_items.itm",
+    "zones/generic/armor.itm",
+    "zones/generic/alchemy.itm",
+    "zones/generic/adornments.itm",
+    "zones/9/ice_pents.itm",
+    "zones/8/fdemon.itm",
+    "zones/7/fire_pents.itm",
+    "zones/6/final_doors.itm",
+    "zones/6/earth.itm",
+    "zones/5/sewers.itm",
+    "zones/4/teleport.itm",
+    "zones/4/pent.itm",
+    "zones/37/test_chest.itm",
+    "zones/37/firesmoke.itm",
+    "zones/37/extra_spell.itm",
+    "zones/37/Zombie_Pool.itm",
+    "zones/37/Vamp_keys.itm",
+    "zones/37/Seeker_items.itm",
+    "zones/37/Monk_Key_Parts.itm",
+    "zones/37/Knoger_ladders.itm",
+    "zones/37/Knoger_keys_doors.itm",
+    "zones/37/Item.itm",
+    "zones/37/Ice_skull_light.itm",
+    "zones/37/Ice_area_teles.itm",
+    "zones/37/Holes_ladders.itm",
+    "zones/37/Golem_area_doors_keys.itm",
+    "zones/37/Fortress_quest_right_teles.itm",
+    "zones/37/Fortress_crappy_teles.itm",
+    "zones/37/Fortress_Keys_doors.itm",
+    "zones/37/Bookeater_wrong_teles.itm",
+    "zones/37/Bookeater_teleporters.itm",
+    "zones/37/Big_room_keys_doors.itm",
+    "zones/37/Bandit_Keys_doors.itm",
+    "zones/36/arkhata_dict.itm",
+    "zones/36/Caligar_stuff.itm",
+    "zones/36/Caligar_Weapons.itm",
+    "zones/36/Caligar_UPass.itm",
+    "zones/36/Caligar_Training.itm",
+    "zones/36/Caligar_PalaceL3.itm",
+    "zones/36/Caligar_PalaceL2.itm",
+    "zones/36/Caligar_Palace.itm",
+    "zones/36/Caligar_Items.itm",
+    "zones/36/Caligar_Dungeon.itm",
+    "zones/36/Caligar_City.itm",
+    "zones/36/Caligar_Amazon_Den.itm",
+    "zones/35/lq_light.itm",
+    "zones/35/lq_door.itm",
+    "zones/35/lq.itm",
+    "zones/34/teufel.itm",
+    "zones/34/teleport.itm",
+    "zones/34/hell_pent.itm",
+    "zones/33/tunnel.itm",
+    "zones/32/monsters.itm",
+    "zones/32/mission.itm",
+    "zones/32/dungeon_doors.itm",
+    "zones/32/chests.itm",
+    "zones/31/spells.itm",
+    "zones/31/minezombie.itm",
+    "zones/31/minewall.itm",
+    "zones/31/mines.itm",
+    "zones/31/gold_units.itm",
+    "zones/31/chests.itm",
+    "zones/30/wr_spawner.itm",
+    "zones/3/above3_generic.itm",
+    "zones/29/wrtower.itm",
+    "zones/29/wrforesttowndrinks.itm",
+    "zones/29/wrforesttown.itm",
+    "zones/29/wrarenapents.itm",
+    "zones/29/warr_keys.itm",
+    "zones/29/teleports.itm",
+    "zones/29/spade.itm",
+    "zones/29/moveblock.itm",
+    "zones/29/minewall.itm",
+    "zones/29/gold_units.itm",
+    "zones/29/chests.itm",
+    "zones/29/bran.itm",
+    "zones/28/uw_potion.itm",
+    "zones/28/gold_units.itm",
+    "zones/28/WS_Robbers_Teleporters.itm",
+    "zones/28/WS_Robbers_Storeroom.itm",
+    "zones/28/WS_Robbers_Doors_Quest.itm",
+    "zones/28/WS_Robbers_Doors.itm",
+    "zones/28/WS_Robbers_Chests.itm",
+    "zones/28/WS_Forest_Pier_Teleports.itm",
+    "zones/28/WS_Forest_Pier_LakeBeast_Items.itm",
+    "zones/28/WS_Forest_Bears.itm",
+    "zones/26/vault.itm",
+    "zones/26/spiketrap.itm",
+    "zones/26/light_teleport.itm",
+    "zones/26/dungeon.itm",
+    "zones/26/dragon_sign_1.itm",
+    "zones/26/dragon_door.itm",
+  ];
+
+  const CHARACTER_FILES = [
+    "zones/generic/macro.chr",
+    "zones/9/ice_pents.chr",
+    "zones/9/ice_pent_boss.chr",
+    "zones/8/fire.chr",
+    "zones/7/strong.chr",
+    "zones/7/fire_pents.chr",
+    "zones/7/fire_pent_boss.chr",
+    "zones/6/edemon.chr",
+    "zones/5/sewers.chr",
+    "zones/4/pents.chr",
+    "zones/4/pent_boss.chr",
+    "zones/37/secretary.chr",
+    "zones/37/Vamp_Skele_Zombie.chr",
+    "zones/37/Seekers.chr",
+    "zones/37/Pot_Maker.chr",
+    "zones/37/Monks_Library.chr",
+    "zones/37/Mine_Quest.chr",
+    "zones/37/Knogers_Creeper.chr",
+    "zones/37/Golem_gang.chr",
+    "zones/37/Fortress_Enemies_and_Guard.chr",
+    "zones/37/Forest2.chr",
+    "zones/37/Forest.chr",
+    "zones/37/Fighting_School.chr",
+    "zones/37/City_Traders_Banker.chr",
+    "zones/37/Campers.chr",
+    "zones/37/Bridge_Guards.chr",
+    "zones/37/Blue_harp.chr",
+    "zones/37/Big_Room_Quest.chr",
+    "zones/37/Bandits.chr",
+    "zones/36/Caligar_Vendors.chr",
+    "zones/36/Caligar_UPass.chr",
+    "zones/36/Caligar_Training.chr",
+    "zones/36/Caligar_Quest.chr",
+    "zones/36/Caligar_Palace.chr",
+    "zones/36/Caligar_Guards.chr",
+    "zones/36/Caligar_Dungeon.chr",
+    "zones/36/Caligar_City.chr",
+    "zones/36/Caligar_Amazon_Den.chr",
+    "zones/35/lq.chr",
+    "zones/34/teufel.chr",
+    "zones/34/hell_boss.chr",
+    "zones/34/hell.chr",
+    "zones/33/tunnel.chr",
+    "zones/32/mission.chr",
+    "zones/31/shopkeepers.chr",
+    "zones/31/minezombie.chr",
+    "zones/31/minewall.chr",
+    "zones/31/mineshop.chr",
+    "zones/31/mines.chr",
+    "zones/31/dwarves.chr",
+    "zones/3/above3_generic.chr",
+    "zones/29/wrtowerfriendly.chr",
+    "zones/29/wrtower.chr",
+    "zones/29/wrforesttownquestchar.chr",
+    "zones/29/wrforesttownmages.chr",
+    "zones/29/wrforesttowngrolms.chr",
+    "zones/29/wrforesttown.chr",
+    "zones/29/military.chr",
+    "zones/28/WS_Robbers_Quest.chr",
+    "zones/28/WS_Robbers.chr",
+    "zones/28/WS_Quest_Chars.chr",
+    "zones/28/WS_Forest_Pier_LakeBeasts.chr",
+    "zones/28/WS_Forest_Bears.chr",
+    "zones/26/vault.chr",
+    "zones/26/dungeon.chr",
+    "zones/26/dragon_of_death.chr",
+    "zones/25/warped.chr",
+    "zones/25/hell_boss.chr",
+    "zones/25/hell.chr",
+    "zones/24/strategy.chr",
+    "zones/23/strategy.chr",
+    "zones/22/lab5.chr",
+    "zones/22/lab4.chr",
+    "zones/22/lab3.chr",
+    "zones/22/lab2.chr",
+    "zones/22/lab1.chr",
+    "zones/21/pents.chr",
+    "zones/21/ice_pents.chr",
+    "zones/21/fire_pents.chr",
+    "zones/20/merchant.chr",
+    "zones/20/lq.chr",
+    "zones/2/below2.chr",
+    "zones/19/saltmine.chr",
+    "zones/19/nomad.chr",
+    "zones/18/bones.chr",
+    "zones/17/two.chr",
+    "zones/16/forest.chr",
+    "zones/15/swamp.chr",
+    "zones/14/random.chr",
+    "zones/13/dungeon.chr",
+    "zones/12/mine.chr",
+    "zones/11/palace.chr",
+    "zones/10/ice.chr",
+    "zones/1/shrike.chr",
+    "zones/1/above1_wood.chr",
+    "zones/1/above1_warlock.chr",
+    "zones/1/above1_village.chr",
+    "zones/1/above1_skeleton_maze.chr",
+    "zones/1/above1_robber.chr",
+    "zones/1/above1_mage_castle.chr",
+    "zones/1/above1_mad.chr",
+    "zones/1/above1_knight_castle.chr",
+    "zones/1/above1_guild.chr",
+    "zones/1/above1_exp_dungron.chr",
+    "zones/1/above1_exp2_dungeon.chr",
+    "zones/1/above1_city.chr",
+    "zones/generic/test.chr",
+    "zones/generic/sidestory.chr",
+    "zones/generic/player.chr"
+  ];
+
+  MAP_FILES = [
+    "zones/17/two.map",
+    "zones/16/forest.map",
+    "zones/15/swamp.map",
+    "zones/14/random.map",
+    "zones/13/dungeon.map",
+    "zones/12/mines.map",
+    "zones/11/palace.map",
+    "zones/10/ice.map",
+    "zones/1/above1.map",
+    "zones/9/ice_pents.map",
+    "zones/8/fire.map",
+    "zones/7/fire_pents.map",
+    "zones/6/earth.map",
+    "zones/5/sewers.map",
+    "zones/4/lab1.map",
+    "zones/37/arkhata.map",
+    "zones/36/caligar.map",
+    "zones/35/lq.map",
+    "zones/34/teufel.map",
+    "zones/33/tunnel.map",
+    "zones/32/newdungeon.map",
+    "zones/31/mines.map",
+    "zones/30/wr_spawner.map",
+    "zones/3/above3.map",
+    "zones/29/wrforesttown.map",
+    "zones/28/WS_Robbers.map",
+    "zones/26/dragon.map",
+    "zones/25/warped.map",
+    "zones/24/strategy.map",
+    "zones/23/strategy.map",
+    "zones/22/lab1.map",
+    "zones/21/system.map",
+    "zones/20/lq.map",
+    "zones/2/below2.map",
+    "zones/19/nomad.map",
+    "zones/18/bones.map"
+  ];
+
+  const padToEight = number => number <= 99999999 ? `0000000${number}`.slice(-8) : number;
+  const roundToThousand = number => Math.floor(number / 1000) * 1000;
+  const getSpritePathFromNumber = spriteNumber => `astonia3_pngs/${padToEight(roundToThousand(spriteNumber))}/${padToEight(spriteNumber)}.png`;
+  const getSpritePath = spriteId => getSpritePathFromNumber(parseInt(spriteId));
+
+  const loadItemData = async (filename) => {
+    return new Promise((resolve, reject) => {
+      $.ajax({
+        url: filename,
+        dataType: "text",
+        mimeType: 'text/plain',
+        cache: false,
+        isLocal: true,
+        success: (data, status) => {
+          // Map of itemName -> {sprite, flag, other properties}.
+          itemData = {};
+
+          // Split blocks by semicolon.
+          const blocks = data.split(";");
+          for (const block of blocks) {
+            const trimmedBlock = block.trim();
+            if (!trimmedBlock) {
+              continue;
+            }
+            const lines = trimmedBlock.split("\n");
+            // First line is name. Remove trailing colon.
+            const itemName = lines.shift(0).split(':')[0];
+
+            const blockData = {};
+            for (const line of lines) {
+              const pieces = line.split("=");
+              const key = pieces[0];
+              const value = pieces[1];
+              blockData[key] = value;
+            }
+
+            blockData.name = itemName;
+            itemData[itemName] = blockData;
+          }
+          resolve(itemData);
+        },
+        error: reject
+      });
+    });
+  }
+
+  const loadMapData = async (filename) => {
+    return new Promise((resolve, reject) => {
+      $.ajax({
+        url: filename,
+        dataType: "text",
+        mimeType: 'text/plain',
+        cache: false,
+        isLocal: true,
+        success: (data, status) => {
+          // Map of (x, y) -> {fsprite, gsprite, other properties}.
+          mapData = {};
+          // Split blocks by blank line.
+          const blocks = data.split("\n\n");
+          for (const block of blocks) {
+            const trimmedBlock = block.trim();
+            if (!trimmedBlock) {
+              continue;
+            }
+            const lines = trimmedBlock.split("\n");
+            const blockData = {};
+            for (const line of lines) {
+              const pieces = line.split("=");
+              const key = pieces[0];
+              const value = pieces[1];
+              blockData[key] = value;
+            }
+
+            // Convert "field" to (x, y) coordinates.
+            if (!('field' in blockData)) {
+              console.error('Blockdata does not have coordinates!', block, blockData);
+              continue;
+            }
+
+            const coords = blockData['field'].split('"')[1].split(",");
+            const x = parseInt(coords[0]);
+            const y = parseInt(coords[1]);
+            blockData.x = x;
+            blockData.y = y;
+
+            // Add row/cell to map.
+            if (!(y in mapData)) {
+              mapData[y] = {}
+            }
+            mapData[y][x] = blockData;
+
+            resolve(mapData);
+          }
+        }
+      });
+    })
+  };
+
+  const loadImage = async (img, filePath) => {
+    return new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+      img.src = filePath;
+    })
+  }
+
+  const extractSpriteIdsFromMap = async (mapData, items, characters) => {
+    const spriteIds = [];
+    for (const row of Object.values(mapData)) {
+      for (const cell of Object.values(row)) {
+        for (const spriteType of ['gsprite', 'fsprite', 'itsprite']) {
+          if (spriteType in cell) {
+            const spriteId = cell[spriteType];
+            if (!(spriteId in spriteIds)) {
+              spriteIds.push(spriteId);
+            }
+          }
+        }
+        if ('it' in cell && cell['it'] in items && 'sprite' in items[cell['it']]) {
+          spriteIds.push(items[cell['it']]['sprite']);
+        }
+        if ('ch' in cell && cell['ch'] in characters && 'sprite' in characters[cell['ch']]) {
+          // chars are offset by * 1000 + 100000. e.g. 26 -> 126000.
+          spriteId = parseInt(characters[cell['ch']]['sprite'])
+          spriteId = spriteId * 1000 + 100000;
+          spriteIds.push(spriteId.toString());
+        }
+      }
+    }
+    return spriteIds;
+  }
+
+  const loadSprites = async (spriteIds) => {
+    return new Promise(async (resolve, reject) => {
+      // Sprite ID -> image data.
+      const spriteCache = {};
+      // Resolving promises.
+      const promises = [];
+      for (const spriteId of spriteIds) {
+        if (!(spriteId in spriteCache)) {
+          const img = new Image();
+          const spritePath = getSpritePath(spriteId);
+          spriteCache[spriteId] = img;
+          promises.push(loadImage(img, spritePath).catch(error => {
+            //console.error(error);
+            delete spriteCache[spriteId];
+          }))
+        }
+      }
+      await Promise.all(promises);
+      resolve(spriteCache);
+    });
+  }
+
+
+
+  const main = async () => {
+
+    // Get canvas elements.
+    const myCanvas = document.getElementById('canvas');
+    const ctx = myCanvas.getContext('2d');
+
+    // Resize canvas to screen size.
+    $("#canvas").attr("width", $("body").width());
+    $("#canvas").attr("height", $("body").height() - 20);
+    const canvasWidth = myCanvas.width;
+    const canvasHeight = myCanvas.height;
+
+    // Populate dropdown.
+    mapSelector = $("#mapSelector");
+    MAP_FILES.forEach(MAP_FILE => {
+      mapSelector.append($("<option />").text(MAP_FILE).val(MAP_FILE))
+    })
+    mapSelector.on('change', e => {
+      drawMap(mapSelector.val())
+    })
+
+    // Parse .itm files for sprite codes.
+    const items = {};
+    await Promise.all(ITEM_FILES.map(ITEM_FILE => {
+      return loadItemData(ITEM_FILE).then(result => {
+        Object.assign(items, result);
+      }).catch(e => { console.error(e); });
+    }));
+    console.log(`Loaded ${Object.keys(items).length} items.`);
+
+    characters = {};
+    await Promise.all(CHARACTER_FILES.map(CHARACTER_FILE => {
+      return loadItemData(CHARACTER_FILE).then(result => {
+        Object.assign(characters, result);
+      }).catch(e => { console.error(e); });
+    }));
+    console.log(`Loaded ${Object.keys(characters).length} characters.`);
+
+    //ctx.globalCompositeOperation='destination-over';
+    //ctx.globalCompositeOperation='destination-under';
+
+    const drawToCanvas = (img, x, y, offsetX, offsetY) => {
+      // Draw to canvas.
+      // Coordinate system is rotated 90 degrees.
+      // X-axis increases to the bottom right, Y axis increases to the bottom left.
+      // This means the origin is in the top-right, and we draw tiles from the
+      // top-right of the screen, downwards towards the bottom-left.
+      //
+      // So:
+      //  * Increases in Y (column) -> increase in canvas Y, decrease in canvas X
+      //  * Increases in X (row) -> increase in canvas Y, increase in canvas X
+      //
+      // It's a normal grid rotated clockwise by 45 degrees.
+
+      // Horizontal space between tiles (tile width).
+      const TILE_WIDTH = 20;
+      // Vertical space between tiles (tile height).
+      const TILE_HEIGHT = 10;
+
+      let target_y = y * TILE_HEIGHT;
+      let target_x = x * TILE_WIDTH;
+
+      // The row goes diagonally south-east along the screen.
+      target_y += x * TILE_HEIGHT;
+      // The column goes diagonally south-west along the screen.
+      target_x += y * -TILE_WIDTH;
+
+      // Offset canvas.
+      target_x += offsetX;
+      target_y += offsetY;
+
+      // Check the tile is visible.
+      if (target_x < -TILE_WIDTH ||
+        target_x > canvasWidth + TILE_WIDTH ||
+        target_y < -TILE_HEIGHT ||
+        target_y > canvasHeight + TILE_HEIGHT) {
+        /*if (target_x < 0 ||
+            target_x > canvasWidth ||
+            target_y < 0 ||
+            target_y > canvasHeight) {*/
+        return;
+      }
+
+      // Align to center of image.
+      target_x -= img.width / 2;
+      target_y -= img.height / 2;
+
+      ctx.drawImage(img, target_x, target_y);
+    }
+
+    const drawCanvas = (mapData, spriteCache, offsetX, offsetY) => {
+      // Clear canvas.
+      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+      // Draw top to bottom to get z-index order right.
+      for (const y of Object.keys(mapData)) {
+        for (const x of Object.keys(mapData[y])) {
+          // Load sprite.
+          cell = mapData[y][x];
+          //console.log(cell);
+
+          // Draw ground and f sprites.
+          for (const spriteType of ['gsprite', 'fsprite']) {
+            if (spriteType in cell) {
+              // Check if the sprite loaded.
+              const spriteId = cell[spriteType];
+              if (spriteId in spriteCache) {
+                drawToCanvas(spriteCache[spriteId], x, y, offsetX, offsetY);
+              } else {
+                //console.warn('Could not draw', spriteType, cell[spriteType])
+              }
+
+            }
+          }
+
+          // Draw item sprites.
+          if ('it' in cell && cell['it'] in items && 'sprite' in items[cell['it']]) {
+            const spriteId = items[cell['it']]['sprite'];
+            if (spriteId in spriteCache) {
+              drawToCanvas(spriteCache[spriteId], x, y, offsetX, offsetY);
+            } else {
+              //console.warn('Could not draw item', items[cell['ch']])
+            }
+          }
+
+          // Draw character sprites.
+          if ('ch' in cell && cell['ch'] in characters && 'sprite' in characters[cell['ch']]) {
+            let spriteId = parseInt(characters[cell['ch']]['sprite'])
+            spriteId = spriteId * 1000 + 100000;
+            if (spriteId in spriteCache) {
+              drawToCanvas(spriteCache[spriteId], x, y, offsetX, offsetY);
+            } else {
+              //console.warn('Could not draw character', characters[cell['ch']])
+            }
+          }
+        }
+      }
+    }
+
+    const drawMap = async (MAP_FILE) => {
+      // Parse .map file for sprite coordinates and more sprite codes.
+      const mapData = await loadMapData(MAP_FILE);
+      const mapSprites = await extractSpriteIdsFromMap(mapData, items, characters);
+
+      // Load sprites.
+      const spriteCache = await loadSprites(mapSprites);
+      console.log(`${Object.keys(spriteCache).length} sprites loaded: `, spriteCache);
+
+      drawCanvas(mapData, spriteCache, 0, 0);
+
+      // Make canvas draggable
+      let drag = false;
+      let offsetX = 0;
+      let offsetY = 0;
+      let lastX = 0;
+      let lastY = 0;
+
+      myCanvas.onmousedown = function(evt) {
+        lastX = evt.clientX;
+        lastY = evt.clientY;
+        if (!drag) {
+          canvas.style.cursor = "grab";
+          drag = true;
+        }
+      }
+
+      myCanvas.onmousemove = function(evt) {
+        if (drag) {
+          var diffY = lastY - evt.clientY;
+          var diffX = lastX - evt.clientX;
+          offsetX += -diffX;
+          offsetY += -diffY;
+          lastX = evt.clientX;
+          lastY = evt.clientY;
+          drawCanvas(mapData, spriteCache, offsetX, offsetY);
+        }
+        canvas.style.cursor = "grab";
+      }
+
+      myCanvas.onmouseup = function(evt) {
+        drag = false;
+        canvas.style.cursor = "default";
+      }
+    }
+
+    // Load map selected by default.
+    mapSelector.trigger('change');
+
+  }
+
+  main();
+  </script>
+</body>
+
+</html>
